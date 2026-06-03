@@ -1,3 +1,11 @@
 .env
 rag-assistant/
 notebooks/chroma_db
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.log
+chroma_db/
+logs/
+data/
