@@ -4,10 +4,18 @@ from src.ingestion.transcript import(
     InvalidYoutubeURLError,
     TranscriptNotAvailableError
 )
+from src.ingestion.chunker import (
+    TranscriptChunker,
+    Chunk,
+    ChunkingError,
+)
 
 __all__ = [
     YoutubeTranscriptFetcher,
     Transcript_segment,
     InvalidYoutubeURLError,
-    TranscriptNotAvailableError
+    TranscriptNotAvailableError,
+    TranscriptChunker,
+    Chunk,
+    ChunkingError
 ]
