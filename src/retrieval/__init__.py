@@ -11,10 +11,18 @@ from src.retrieval.query_transformer import (
     ConversationTurn,
     QueryTransformationError,
 )
+from src.retrieval.retriever import (
+    HybridRetriever,
+    HybridSearchResult,
+    RetrieverError,
+)
 
 __all__ = [
     "QueryTransformer",
     "QueryTransformationResult",
     "ConversationTurn",
     "QueryTransformationError",
+    "HybridRetriever",
+    "HybridSearchResult",
+    "RetrieverError",
 ]
