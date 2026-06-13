@@ -16,6 +16,11 @@ from src.retrieval.retriever import (
     HybridSearchResult,
     RetrieverError,
 )
+from src.retrieval.reranker import (
+    CrossEncoderReranker,
+    RankedResult,
+    RerankerError,
+)
 
 __all__ = [
     "QueryTransformer",
@@ -25,4 +30,7 @@ __all__ = [
     "HybridRetriever",
     "HybridSearchResult",
     "RetrieverError",
+    "CrossEncoderReranker",
+    "RankedResult",
+    "RerankerError",
 ]
