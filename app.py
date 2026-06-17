@@ -261,12 +261,138 @@ def _run_ingestion(url:str)->None:
             st.error(f"❌ Ingestion failed: {error_str}")
 
 def render_chat_interface() -> None:
-    st.subheader("💬 Chat with the Video")
+    pipeline = st.session_state.pipeline
 
-    st.info(
-        "🚧 Chat interface coming in Stage 3. "
-        "Video loading coming in Stage 2."
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.success(
+            f"✅ {st.session_state.video_chunk_count} chunks indexed "
+            f"and ready to query"
+        )
+    with col2:
+        st.link_button(
+            "▶ Open video",
+            url                 = st.session_state.video_url,
+            use_container_width = True,
+        )
+
+    st.divider()
+
+    if not st.session_state.messages:
+        with st.chat_message("assistant"):
+            st.markdown(
+                "👋 **Video indexed and ready!** "
+                "Ask me anything about this video — "
+                "I'll answer using only its content and cite "
+                "the exact timestamps."
+            )
+
+    for message in st.session_state.messages:
+        _render_message(message)
+
+    prompt = st.chat_input(
+        placeholder = "Ask anything about the video...",
+        disabled    = st.session_state.is_loading,
     )
+
+    if prompt and not st.session_state.is_loading:
+        _handle_user_question(prompt, pipeline)
+
+
+def _render_message(message: dict) -> None:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+    
+        if message["role"] == "assistant" and message.get("sources"):
+            _render_sources(message["sources"])
+
+
+def _render_sources(sources: list[dict]) -> None:
+
+    if not sources:
+        return
+
+    st.caption("📍 **Sources from video:**")
+
+    cols = st.columns(len(sources))
+
+    for col, source in zip(cols, sources):
+        with col:
+            st.link_button(
+                label               = f"▶ {source['display']}",
+                url                 = source["youtube_link"],
+                use_container_width = True,
+                help                = f"Open video at {source['start_time']}",
+            )
+
+
+def _handle_user_question(prompt: str, pipeline) -> None:
+
+    from src.pipeline import ConversationTurn
+
+    user_message = {
+        "role"   : "user",
+        "content": prompt,
+        "sources": [],
+    }
+
+    st.session_state.messages.append(user_message)
+    _render_message(user_message)
+
+    with st.chat_message("assistant"):
+        with st.spinner("🤔 Thinking..."):
+            try:
+                response = pipeline.query(
+                    youtube_url = st.session_state.video_url,
+                    question    = prompt,
+                    history     = st.session_state.conversation_history,
+                )
+                error = None
+            except Exception as e:
+                response = None
+                error    = str(e)
+
+    if error:
+        assistant_content = (
+            "⚠️ Something went wrong while generating an answer. "
+            f"Error: {error}"
+        )
+        assistant_sources = []
+    else:
+        assistant_content = response.answer
+        assistant_sources = [
+            {
+                "rank"        : s.rank,
+                "start_time"  : s.start_time,
+                "end_time"    : s.end_time,
+                "youtube_link": s.youtube_link,
+                "display"     : s.display,
+            }
+            for s in response.sources
+        ]
+
+    
+        st.session_state.last_query_ms = response.latency.total_ms
+
+    assistant_message = {
+        "role"   : "assistant",
+        "content": assistant_content,
+        "sources": assistant_sources,
+    }
+
+    st.session_state.messages.append(assistant_message)
+    _render_message(assistant_message)
+
+
+    if not error:
+        st.session_state.conversation_history.append(
+            ConversationTurn(
+                question = prompt,
+                answer   = assistant_content,
+            )
+        )
 
 def main() -> None:
     try:
