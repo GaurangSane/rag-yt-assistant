@@ -344,22 +344,22 @@ Explicit system instruction: *if the answer is not in the provided video segment
 - [x] Project scaffold and folder structure
 - [x] Centralized config with `@dataclass` settings
 - [x] `src/ingestion/transcript.py` — custom exceptions, logging, dataclasses
-- [ ] `src/ingestion/chunker.py`
-- [ ] `src/ingestion/embedder.py`
-- [ ] `src/storage/vector_store.py`
-- [ ] `src/retrieval/query_transformer.py`
-- [ ] `src/retrieval/retriever.py`
-- [ ] `src/retrieval/reranker.py`
-- [ ] `src/generation/prompt_builder.py`
-- [ ] `src/generation/generator.py`
-- [ ] `src/pipeline.py` — clean orchestrator
-- [ ] Unit tests for every module
+- [x] `src/ingestion/chunker.py`
+- [x] `src/ingestion/embedder.py`
+- [x] `src/storage/vector_store.py`
+- [x] `src/retrieval/query_transformer.py`
+- [x] `src/retrieval/retriever.py`
+- [x] `src/retrieval/reranker.py`
+- [x] `src/generation/prompt_builder.py`
+- [x] `src/generation/generator.py`
+- [x] `src/pipeline.py` — clean orchestrator
+- [x] Unit tests for every module
 
 ### ⬜ Phase 3 — Streamlit Web App
-- [ ] PDF/YouTube URL upload interface
-- [ ] Chat UI with message history
-- [ ] Timestamp source display with video links
-- [ ] Session state management
+- [x] PDF/YouTube URL upload interface
+- [x] Chat UI with message history
+- [x] Timestamp source display with video links
+- [x] Session state management
 
 ### ⬜ Phase 4 — FastAPI Backend
 - [ ] `POST /ingest` — accepts YouTube URL, runs ingestion pipeline
