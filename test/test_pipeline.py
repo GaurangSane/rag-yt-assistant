@@ -124,6 +124,47 @@ class TestRAGResponseStructure:
             )
         assert response.video_id == "ktrIQUYIxZo"
 
+    # Inside TestRAGResponseStructure class — add this test:
+
+    def test_response_has_answer_grounded_field(self, pipeline):
+        """answer_grounded must be a boolean."""
+        with self._mock_generate(
+            pipeline,
+            "As explained at [1:00], the video covers..."
+        ):
+            response = pipeline.query(
+                youtube_url = self.TEST_URL,
+                question    = "what is this about?",
+            )
+        assert isinstance(response.answer_grounded, bool)
+
+    def test_grounded_answer_sets_true(self, pipeline):
+        """Normal answer with citation sets answer_grounded=True."""
+        with self._mock_generate(
+            pipeline,
+            "As explained at [2:30], gradient descent works by..."
+        ):
+            response = pipeline.query(
+                youtube_url = self.TEST_URL,
+                question    = "how does gradient descent work?",
+            )
+        assert response.answer_grounded is True
+
+    def test_guard_phrase_sets_grounded_false(self, pipeline):
+        """
+        Answer containing the hallucination guard phrase
+        must set answer_grounded=False.
+        """
+        with self._mock_generate(
+            pipeline,
+            "The video doesn't appear to cover this specific topic."
+        ):
+            response = pipeline.query(
+                youtube_url = self.TEST_URL,
+                question    = "what is pasta carbonara?",
+            )
+        assert response.answer_grounded is False    
+
 
 # ── Tests: Re-ingestion Behaviour ────────────────────────────────────
 class TestReIngestion:
