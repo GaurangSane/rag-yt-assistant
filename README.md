@@ -162,44 +162,44 @@ The system is divided into two worlds that run at different times:
 ```
 yt-rag-assistant/
 │
-├── 📂 src/                          # All business logic
-│   ├── config.py                    # ⚙️  Centralized settings, logging, validation
+├── 📂 src/                          
+│   ├── config.py                    
 │   │
-│   ├── 📂 ingestion/                # World 1: data pipeline
-│   │   ├── transcript.py            # Step 1 — fetch + parse YouTube transcript
-│   │   ├── chunker.py               # Step 2 — timestamp-based sliding window
-│   │   └── embedder.py              # Step 3 — batch encode with all-mpnet
+│   ├── 📂 ingestion/                
+│   │   ├── transcript.py            
+│   │   ├── chunker.py               
+│   │   └── embedder.py              
 │   │
-│   ├── 📂 storage/                  # Persistence layer
-│   │   └── vector_store.py          # Step 4 — ChromaDB CRUD operations
+│   ├── 📂 storage/                  
+│   │   └── vector_store.py          
 │   │
-│   ├── 📂 retrieval/                # World 2: search pipeline
-│   │   ├── query_transformer.py     # Step 5 — multi-query generation
-│   │   ├── retriever.py             # Step 6 — hybrid search + RRF fusion
-│   │   └── reranker.py              # Step 7 — cross-encoder scoring
+│   ├── 📂 retrieval/                
+│   │   ├── query_transformer.py     
+│   │   ├── retriever.py             
+│   │   └── reranker.py              
 │   │
-│   ├── 📂 generation/               # Answer generation
-│   │   ├── prompt_builder.py        # Step 8 — structured prompt assembly
-│   │   └── generator.py             # Step 9 — Groq LLM call
+│   ├── 📂 generation/               
+│   │   ├── prompt_builder.py        
+│   │   └── generator.py             
 │   │
-│   └── pipeline.py                  # 🔗 Orchestrates all 9 steps end-to-end
+│   └── pipeline.py                  
 │
-├── 📂 tests/                        # Unit + integration tests
+├── 📂 tests/                        
 │   ├── test_transcript.py
 │   ├── test_chunker.py
 │   ├── test_retriever.py
 │   └── test_pipeline.py
 │
 ├── 📂 notebooks/
-│   └── 01_rag_prototype.ipynb       # 📓 Original prototype (all 9 steps)
+│   └── 01_rag_prototype.ipynb       
 │
-├── 📂 data/                         # Test documents and samples
-├── 📂 chroma_db/                    # Vector DB (auto-created, gitignored)
-├── 📂 logs/                         # Application logs (auto-created)
+├── 📂 data/                         
+├── 📂 chroma_db/                    
+├── 📂 logs/                         
 │
-├── app.py                           # 🎨 Streamlit UI (Phase 3)
-├── main.py                          # 🚀 FastAPI server (Phase 4)
-├── .env                             # 🔑 API keys (never committed)
+├── app.py                           
+├── main.py                          
+├── .env                             
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -221,21 +221,17 @@ yt-rag-assistant/
 git clone https://github.com/GaurangSane/yt-rag-assistant.git
 cd yt-rag-assistant
 
-# Create virtual environment with Python 3.11
 python3.11 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate        
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment
 
 ```bash
-# Create .env file
 cp .env.example .env
 
-# Add your Groq API key
 echo "GROQ_API_KEY=your_key_here" >> .env
 ```
 
@@ -243,7 +239,6 @@ echo "GROQ_API_KEY=your_key_here" >> .env
 
 ```bash
 python -c "from src.config import validate_environment; validate_environment()"
-# Expected: ✅ Environment validation passed
 ```
 
 ### 4. Run the Pipeline
@@ -257,7 +252,6 @@ result = rag_pipeline(
 )
 
 print(result["answer"])
-# → "As explained at [2:34], the main concept is..."
 
 for source in result["sources"]:
     print(f"  📍 [{source['timestamp']} → {source['end_time']}]")
@@ -268,14 +262,11 @@ for source in result["sources"]:
 ## 🧪 Running Tests
 
 ```bash
-# Run all tests
 pytest tests/ -v
 
-# Run specific module tests
 pytest tests/test_transcript.py -v
 pytest tests/test_chunker.py -v
 
-# Run with coverage report
 pytest tests/ --cov=src --cov-report=term-missing
 ```
 
@@ -435,15 +426,15 @@ This project was built as a deep learning exercise — understanding every compo
 from src.pipeline import rag_pipeline
 
 result = rag_pipeline(
-    youtube_url          = "https://youtube.com/watch?v=...",  # required
-    user_question        = "Your question here",               # required
-    conversation_history = [                                   # optional
+    youtube_url          = "https://youtube.com/watch?v=...",  
+    user_question        = "Your question here",               
+    conversation_history = [                                   
         {"question": "previous q", "answer": "previous a"}
     ],
-    window_sec           = 60,    # chunk window size (default: 60)
-    overlap_sec          = 15,    # chunk overlap (default: 15)
-    retrieve_top_k       = 5,     # retrieval candidates (default: 5)
-    rerank_top_k         = 3,     # final chunks (default: 3)
+    window_sec           = 60,    
+    overlap_sec          = 15,    
+    retrieve_top_k       = 5,     
+    rerank_top_k         = 3,     
 )
 ```
 
