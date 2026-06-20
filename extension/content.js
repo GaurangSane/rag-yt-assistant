@@ -30,6 +30,39 @@
  * Returns null if no video ID found (e.g. YouTube home page,
  * search results, channel pages).
  */
+// At the TOP of content.js, before everything else:
+
+/**
+ * PING handler — lets popup.js check if we're running
+ * without this, ensureContentScriptInjected() can't tell
+ * if injection is needed
+ */
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "PING") {
+    sendResponse({ alive: true });
+    return true;
+  }
+
+  if (message.action === "GET_VIDEO_URL") {
+    const videoId = getVideoId();
+    if (videoId) {
+      sendResponse({
+        videoUrl: buildVideoUrl(videoId),
+        videoId : videoId,
+        success : true,
+      });
+    } else {
+      sendResponse({
+        videoUrl: null,
+        videoId : null,
+        success : false,
+        reason  : "No video found on this page",
+      });
+    }
+  }
+
+  return true;
+});
 function getVideoId() {
   const url    = window.location.href;
   const urlObj = new URL(url);

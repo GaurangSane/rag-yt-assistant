@@ -271,7 +271,7 @@ async def ingest_video(request : IngestRequest)->IngestResponse:
         f"time = {ingest_time}"
     )
 
-    IngestResponse(
+    return IngestResponse(
         video_id=response.video_id,
         chunk_count=chunk_count,
         was_cached=False,

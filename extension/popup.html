@@ -28,8 +28,9 @@
 
     /* ── Base ──────────────────────────────────────── */
     body {
-      width           : 380px;
-      height          : 560px;
+      width           : 400px;    /* wider than popup — side panel has more room */
+      height          : 100vh;    /* full viewport height instead of fixed 560px */
+      min-height      : 500px;
       background      : var(--bg);
       color           : var(--text);
       font-family     : -apple-system, BlinkMacSystemFont,
@@ -388,24 +389,42 @@
 <body>
 
   <!-- ── Header ─────────────────────────────────── -->
-  <div class="header">
-    <div class="header-left">
-      <span>🎬</span>
-      <h1>RAG Assistant</h1>
-    </div>
-    <div style="display:flex; align-items:center; gap:6px;">
-      <span id="status-dot" class="status-dot"></span>
-      <span id="status-text"
-            style="font-size:10px; color:var(--text-muted)">
-        Connecting...
-      </span>
-      <button id="clear-btn"
-              class="clear-btn hidden"
-              title="Clear conversation">
-        Clear
-      </button>
-    </div>
+<div class="header">
+  <div class="header-left">
+    <span>🎬</span>
+    <h1>RAG Assistant</h1>
   </div>
+  <div style="display:flex; align-items:center; gap:6px;">
+    <span id="status-dot" class="status-dot"></span>
+    <span id="status-text"
+          style="font-size:10px; color:var(--text-muted)">
+      Connecting...
+    </span>
+    <button id="clear-btn"
+            class="clear-btn hidden"
+            title="Clear conversation">
+      Clear
+    </button>
+    <!-- Close button — closes the side panel -->
+    <button id="close-btn"
+            title="Close panel"
+            style="
+              background : none;
+              border     : none;
+              color      : var(--text-muted);
+              cursor     : pointer;
+              font-size  : 16px;
+              padding    : 2px 4px;
+              line-height: 1;
+              border-radius: 4px;
+              transition : color 0.15s;
+            "
+            onmouseover="this.style.color='#ef4444'"
+            onmouseout ="this.style.color='var(--text-muted)'">
+      ✕
+    </button>
+  </div>
+</div>
 
   <!-- ── Video Info Bar ─────────────────────────── -->
   <div id="video-bar" class="video-bar hidden">

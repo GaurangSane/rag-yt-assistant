@@ -11,16 +11,71 @@ st.set_page_config(
 )
 
 
+# Enhanced CSS — replace the existing st.markdown CSS block
 st.markdown("""
 <style>
-    /* Tighten chat message padding */
-    .stChatMessage { padding: 0.5rem 0; }
+    /* ── Typography ──────────────────────────────────── */
+    .stChatMessage {
+        padding      : 0.75rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
 
-    /* Source caption styling */
-    .source-label { font-size: 0.8rem; color: #666; }
+    /* ── Answer formatting ───────────────────────────── */
+    .stChatMessage p {
+        line-height: 1.7;
+        margin-bottom: 0.5rem;
+    }
 
-    /* Remove top margin from first title */
-    h1:first-of-type { margin-top: 0; }
+    /* ── Source bar ──────────────────────────────────── */
+    .source-bar {
+        display        : flex;
+        align-items    : center;
+        gap            : 8px;
+        margin-top     : 10px;
+        padding-top    : 10px;
+        border-top     : 1px solid rgba(255,255,255,0.08);
+        flex-wrap      : wrap;
+    }
+
+    .source-label {
+        font-size  : 11px;
+        color      : #94a3b8;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* ── Metric cards ────────────────────────────────── */
+    [data-testid="metric-container"] {
+        background   : rgba(255,255,255,0.03);
+        border       : 1px solid rgba(255,255,255,0.07);
+        border-radius: 8px;
+        padding      : 12px;
+    }
+
+    /* ── Chat input ──────────────────────────────────── */
+    .stChatInputContainer {
+        border-top: 1px solid rgba(255,255,255,0.08) !important;
+        padding-top: 12px;
+    }
+
+    /* ── Expander polish ─────────────────────────────── */
+    .streamlit-expanderHeader {
+        font-size  : 12px !important;
+        color      : #94a3b8 !important;
+    }
+
+    /* ── Success/info boxes ──────────────────────────── */
+    .stSuccess, .stInfo {
+        border-radius: 8px;
+        font-size    : 13px;
+    }
+
+    /* ── Status dot animation ────────────────────────── */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.5; }
+    }
+    .pulse { animation: pulse 2s infinite; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -351,11 +406,26 @@ def render_chat_interface() -> None:
     if not st.session_state.messages:
         with st.chat_message("assistant"):
             st.markdown(
-                "👋 **Ready!** Ask me anything about this video.\n\n"
-                "I'll answer using only its content and show you "
-                "the exact timestamp for every claim I make."
+                "👋 **Video indexed and ready!**\n\n"
+                "I can answer questions about this video's content "
+                "and cite the **exact timestamp** for every claim.\n\n"
+                "**Try asking:**"
             )
-
+            example_questions = [
+                "What is the main topic of this video?",
+                "Give me a summary of the key points",
+                "What does the speaker say about [topic]?",
+                "Explain the most important concept",
+            ]
+            for q in example_questions:
+                if st.button(
+                    q,
+                    key  = f"example_{q[:20]}",
+                    help = "Click to ask this question",
+                ):
+                    # Trigger the question as if user typed it
+                    _handle_user_question(q)
+                    st.rerun()
     
     for message in st.session_state.messages:
         _render_message(message)
@@ -371,42 +441,80 @@ def render_chat_interface() -> None:
 
 
 def _render_message(message: dict) -> None:
-    
+    """
+    Render one message with improved formatting.
+    Uses st.markdown for rich text in answers.
+    """
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
 
-    
-        if message["role"] == "assistant":
+        if message["role"] == "user":
+            # User messages — plain text, no markdown needed
+            st.write(message["content"])
+
+        else:
+            # Assistant messages — render as markdown so
+            # **bold**, bullet points, and citations format nicely
+            st.markdown(message["content"])
+
             if message.get("answer_grounded") and message.get("sources"):
                 _render_sources(message["sources"])
+
             elif not message.get("answer_grounded", True):
-    
-                st.caption(
-                    "ℹ️ *No relevant sections found in this video "
-                    "for this question.*"
+                st.markdown(
+                    "<div style='"
+                    "font-size:12px;"
+                    "color:#64748b;"
+                    "margin-top:8px;"
+                    "padding:8px 12px;"
+                    "background:rgba(255,255,255,0.03);"
+                    "border-radius:6px;"
+                    "border-left:3px solid #475569"
+                    "'>"
+                    "ℹ️ This topic isn't covered in the video sections I have access to."
+                    "</div>",
+                    unsafe_allow_html=True,
                 )
 
 
 def _render_sources(sources: list[dict]) -> None:
-    
+    """
+    Render sources with visual separator and rank indicators.
+    """
     if not sources:
         return
 
-    st.caption("📍 **Sources — click to jump to that moment:**")
-    cols = st.columns(len(sources))
+    # Visual separator between answer and sources
+    st.markdown(
+        "<div style='"
+        "border-top:1px solid rgba(255,255,255,0.08);"
+        "margin-top:12px;"
+        "padding-top:10px;"
+        "display:flex;"
+        "align-items:center;"
+        "gap:8px;"
+        "flex-wrap:wrap;"
+        "'>"
+        "<span style='font-size:11px;color:#64748b;font-weight:500;'>"
+        "📍 Sources</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    for col, source in zip(cols, sources):
+    cols = st.columns(len(sources))
+    rank_colors = ["#6366f1", "#10b981", "#f59e0b"]   # indigo, green, amber
+
+    for i, (col, source) in enumerate(zip(cols, sources)):
+        color = rank_colors[i % len(rank_colors)]
         with col:
             st.link_button(
                 label               = f"▶ {source['display']}",
                 url                 = source["youtube_link"],
                 use_container_width = True,
                 help                = (
-                    f"Open video at {source['start_time']} "
-                    f"in a new tab"
+                    f"Rank {source['rank']} source — "
+                    f"opens video at {source['start_time']}"
                 ),
             )
-
 
 def _handle_user_question(prompt: str) -> None:
     

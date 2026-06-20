@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "YouTube RAG Assistant",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Ask anything about any YouTube video. Get timestamped answers.",
 
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "sidePanel"
   ],
 
   "host_permissions": [
@@ -15,8 +16,11 @@
   ],
 
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "YouTube RAG Assistant"
+    "default_title": "Open YouTube RAG Assistant"
+  },
+
+  "side_panel": {
+    "default_path": "popup.html"
   },
 
   "content_scripts": [
@@ -26,6 +30,10 @@
       "run_at": "document_idle"
     }
   ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
 
   "icons": {
     "48": "icons/icon48.png"
