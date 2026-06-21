@@ -8,7 +8,10 @@ load_dotenv()
 
 ROOT_DIR    = Path(__file__).parent.parent
 DATA_DIR    = ROOT_DIR / "data"
-CHROMA_DIR  = ROOT_DIR / "chroma_db"
+
+CHROMA_DIR = Path(
+    os.getenv("CHROMA_DIR", str(ROOT_DIR / "chroma_db"))
+)
 LOG_DIR     = ROOT_DIR / "logs"
 
 DATA_DIR.mkdir(exist_ok=True)
