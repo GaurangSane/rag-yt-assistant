@@ -9,8 +9,14 @@ from pydantic import BaseModel,field_validator
 import asyncio
 from functools import partial
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 logger = logging.getLogger("rag_app.api")
+
+limiter = Limiter(key_func=get_remote_address)
+
 
 _pipeline : RAGPipeline|None = None
 
@@ -29,6 +35,18 @@ async def fastapi_life(app:FastAPI):
     _pipeline = RAGPipeline()
     time_required = time.time() - load_start
     logger.info(f"Pipeline loaded | time : {time_required} ")
+
+    logger.info("warming model")
+    try:
+
+        warmup_start = time.time()
+        _pipeline._embedder.embed_query("warmup")
+        warmup_time = time.time() - warmup_start
+        logger.info(f"warmup completed | time : {warmup_time}")
+    except Exception as e:
+        logger.warning(f"warmup failed (not critical) | error : {e}")
+
+
 
     yield
 
@@ -209,6 +227,8 @@ async def get_video()->VideosResponse:
         count=len(video_id)
     )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.post(
     "/ingest",
@@ -221,6 +241,7 @@ async def get_video()->VideosResponse:
     ),
     status_code=200
 )
+@limiter.limit("5/minute")
 async def ingest_video(request : IngestRequest)->IngestResponse:
     if _pipeline is None:
         raise HTTPException(
@@ -291,6 +312,7 @@ async def ingest_video(request : IngestRequest)->IngestResponse:
         "Returns a grounded answer with timestamp citations."
     ),
 )
+@limiter.limit("10/minute")
 async def chat(request: ChatRequest) -> ChatResponse:
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not loaded")

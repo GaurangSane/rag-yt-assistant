@@ -262,7 +262,7 @@ class QueryTransformer:
         question = question.strip()
         logger.info(f"Transforming query | question='{question[:80]}'")
 
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         try:
             # ── Build prompts ──────────────────────────────────
@@ -291,7 +291,7 @@ class QueryTransformer:
             raw_output = response.choices[0].message.content
             queries    = self._parse_queries(raw_output, question)
 
-            latency_ms = (time.time() - start_time) * 1000
+            latency_ms = round((time.perf_counter() - start_time) * 1000,3)
 
             logger.info(
                 f"Query transformation complete | "
@@ -312,7 +312,7 @@ class QueryTransformer:
             # ── Graceful degradation ───────────────────────────
             # ANY failure — network, rate limit, parsing — falls back
             # to the original question so the pipeline never crashes
-            latency_ms = (time.time() - start_time) * 1000
+            latency_ms =round((time.perf_counter() - start_time) * 1000,3)
 
             logger.warning(
                 f"Query transformation failed — using original question "

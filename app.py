@@ -101,13 +101,11 @@ def init_session_state() -> None:
 
 
 
+
 @st.cache_resource
-def load_pipeline():
- 
-    from src.pipeline import RAGPipeline
-    with st.spinner("⏳ Loading AI models — this takes ~10s on first run..."):
-        pipeline = RAGPipeline()
-    return pipeline
+def load_api_client():
+    from src.api_client import RAGApiClient
+    return RAGApiClient()  
 
 
 
@@ -280,66 +278,33 @@ def render_url_input() -> None:
 
 
 def _run_ingestion(url: str) -> None:
-    
-    pipeline = st.session_state.pipeline
+    client = st.session_state.pipeline   # now an RAGApiClient
 
-    
-    if pipeline.is_video_indexed(url):
-        video_id    = pipeline._fetcher.extract_video_id(url)
-        chunk_count = pipeline._store.count(video_id)
-
+    if client.is_video_indexed(url):
+        result = client.ingest(url)   # gets chunk count
         st.session_state.video_url         = url
         st.session_state.video_indexed     = True
-        st.session_state.video_chunk_count = chunk_count
-
-        st.success(
-            f"✅ Already indexed ({chunk_count} chunks) "
-            f"— jumping straight to chat!"
-        )
+        st.session_state.video_chunk_count = result["chunk_count"]
+        st.success(f"✅ Already indexed ({result['chunk_count']} chunks)!")
         time.sleep(0.8)
         st.rerun()
         return
 
-    
     progress = st.progress(0, text="Starting...")
-
     try:
-        with st.status(
-            "🔄 Indexing video...", expanded=True
-        ) as status:
-            st.write("📄 Fetching transcript from YouTube...")
-            progress.progress(15, text="Fetching transcript...")
+        with st.status("🔄 Indexing video...", expanded=True) as status:
+            st.write("📄 Fetching and processing video...")
+            progress.progress(30, text="Ingesting...")
 
-            st.write("✂️  Chunking into 60-second segments...")
-            progress.progress(35, text="Chunking...")
-
-            st.write("🔢 Generating semantic embeddings...")
-            progress.progress(60, text="Embedding — this takes ~5s...")
-
-            st.write("💾 Storing in vector database...")
-            progress.progress(80, text="Storing...")
-
-    
-            st.write("🤖 Running first query to finalise setup...")
-            progress.progress(90, text="Finalising...")
-
-            dummy = pipeline.query(
-                youtube_url = url,
-                question    = "What is this video about?",
-            )
-
-            video_id    = dummy.video_id
-            chunk_count = pipeline._store.count(video_id)
+            result = client.ingest(url)
 
             st.session_state.video_url         = url
             st.session_state.video_indexed     = True
-            st.session_state.video_chunk_count = chunk_count
+            st.session_state.video_chunk_count = result["chunk_count"]
 
             progress.progress(100, text="Done!")
             status.update(
-                label    = (
-                    f"✅ Indexed {chunk_count} chunks — ready to chat!"
-                ),
+                label    = f"✅ Indexed {result['chunk_count']} chunks!",
                 state    = "complete",
                 expanded = False,
             )
@@ -350,7 +315,6 @@ def _run_ingestion(url: str) -> None:
     except Exception as e:
         progress.empty()
         _show_ingestion_error(e)
-
 
 def _show_ingestion_error(error: Exception) -> None:
     
@@ -517,50 +481,47 @@ def _render_sources(sources: list[dict]) -> None:
             )
 
 def _handle_user_question(prompt: str) -> None:
-    
-    from src.pipeline import ConversationTurn
+    client = st.session_state.pipeline   # RAGApiClient
 
-    
     user_message = {
         "role"           : "user",
         "content"        : prompt,
         "sources"        : [],
-        "answer_grounded": True,  
+        "answer_grounded": True,
     }
     st.session_state.messages.append(user_message)
     _render_message(user_message)
 
-    
-    st.session_state.is_loading = True
-
     with st.chat_message("assistant"):
-        with st.spinner("🤔 Searching and generating..."):
+        with st.spinner("🤔 Thinking..."):
             try:
-                response = st.session_state.pipeline.query(
+                # Convert ConversationTurn objects to dicts for API
+                history = [
+                    {
+                        "question": turn.question,
+                        "answer"  : turn.answer,
+                    }
+                    for turn in st.session_state.conversation_history
+                ]
+
+                response = client.chat(
                     youtube_url = st.session_state.video_url,
                     question    = prompt,
-                    history     = st.session_state.conversation_history,
+                    history     = history,
                 )
                 error = None
             except Exception as e:
                 response = None
                 error    = str(e)
 
-    st.session_state.is_loading = False
-
-    
     if error:
         assistant_message = {
             "role"           : "assistant",
-            "content"        : (
-                f"⚠️ Something went wrong: `{error}`\n\n"
-                "Please try again or reload the page."
-            ),
+            "content"        : f"⚠️ Error: {error}",
             "sources"        : [],
             "answer_grounded": False,
         }
     else:
-    
         assistant_message = {
             "role"           : "assistant",
             "content"        : response.answer,
@@ -574,26 +535,21 @@ def _handle_user_question(prompt: str) -> None:
                 }
                 for s in response.sources
             ],
-            "answer_grounded": response.answer_grounded, 
+            "answer_grounded": response.answer_grounded,
         }
+        st.session_state.last_query_ms = response.total_ms
 
-    
-        st.session_state.last_latency      = response.latency
-        st.session_state.last_queries_used = response.queries_used
-
-    
     st.session_state.messages.append(assistant_message)
     _render_message(assistant_message)
 
-    
     if not error and response.answer_grounded:
+        from src.pipeline import ConversationTurn
         st.session_state.conversation_history.append(
             ConversationTurn(
                 question = prompt,
                 answer   = response.answer,
             )
         )
-
 
 
 def render_main() -> None:
@@ -617,15 +573,15 @@ def render_main() -> None:
 
 
 def main() -> None:
-    
-    try:
-        validate_environment()
-    except EnvironmentError as e:
-        st.error(f"⚠️ Configuration error: {e}")
-        st.stop()
 
     init_session_state()
-    st.session_state.pipeline = load_pipeline()
+    st.session_state.pipeline = load_api_client()
+    if not st.session_state.pipeline.health():
+        st.error(
+            "⚠️ Cannot connect to the backend API. "
+            "Please try again in a moment."
+        )
+        st.stop()
 
     render_sidebar()
     render_main()
