@@ -1,0 +1,38 @@
+name: Sync to HuggingFace Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'src/api_client.py'
+      - 'requirements.txt'
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "deploy@github.com"
+          git config --global user.name "GitHub Actions"
+          
+          # Clone HF Space
+          git clone https://Gaurang19:$HF_TOKEN@huggingface.co/spaces/Gaurang19/yt-rag-assistant hf_space
+          
+          # Copy only the files HF needs
+          cp app.py hf_space/
+          cp -r src/api_client.py hf_space/src/
+          
+          # Push to HF
+          cd hf_space
+          git add .
+          git diff --quiet && git diff --staged --quiet || git commit -m "Sync from GitHub"
+          git push

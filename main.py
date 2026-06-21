@@ -242,13 +242,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     status_code=200
 )
 @limiter.limit("5/minute")
-async def ingest_video(request : IngestRequest)->IngestResponse:
+async def ingest_video(
+    request : Request,
+    payload : IngestRequest)->IngestResponse:
     if _pipeline is None:
         raise HTTPException(
             status_code=503,
             detail="pipeline not loaded"
         ) 
-    url = request.video_url
+    url = payload.video_url
 
     if _pipeline.is_video_indexed(url):
         video_id = _pipeline._fetcher.extract_video_id(url)
@@ -278,7 +280,7 @@ async def ingest_video(request : IngestRequest)->IngestResponse:
         raise
     except Exception as e:
         logger.error(f"Ingestion failed | url:{url} | error:{e}")
-        HTTPException(
+        raise HTTPException(
             status_code=503,
             detail=f"ingestion failed: error:{e}"
         )     
@@ -313,7 +315,8 @@ async def ingest_video(request : IngestRequest)->IngestResponse:
     ),
 )
 @limiter.limit("10/minute")
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(request: Request,
+    payload: ChatRequest) -> ChatResponse:
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not loaded")
 
@@ -323,21 +326,21 @@ async def chat(request: ChatRequest) -> ChatResponse:
             question = turn.question,
             answer   = turn.answer,
         )
-        for turn in request.history
+        for turn in payload.history
     ]
 
     logger.info(
         f"POST /chat | "
-        f"video_id={request.video_url[-11:]} | "
-        f"question='{request.question[:60]}' | "
+        f"video_id={payload.video_url[-11:]} | "
+        f"question='{payload.question[:60]}' | "
         f"history_turns={len(history)}"
     )
 
     try:
         response = await run_in_executor(
             _pipeline.query,
-            request.video_url,
-            request.question,
+            payload.video_url,
+            payload.question,
             history if history else None,
         )
     except PipelineError:
