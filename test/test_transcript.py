@@ -83,6 +83,67 @@ def test_fetch_returns_correct_types():
     assert len(segments) > 0
     assert isinstance(segments[0], Transcript_segment)
 
+# Replace proxy-related tests in tests/test_transcript.py
+
+def test_fetcher_initialises_without_supadata_key():
+    """
+    Without SUPADATA_API_KEY, fetcher uses direct mode.
+    No environment variables needed for local development.
+    """
+    import os
+    os.environ.pop("SUPADATA_API_KEY", None)
+
+    from src.ingestion.transcript import YoutubeTranscriptFetcher
+    fetcher = YoutubeTranscriptFetcher()
+    assert fetcher._supadata is None
+    assert fetcher._direct   is not None
+
+
+def test_fetcher_initialises_with_supadata_key(monkeypatch):
+    """
+    With SUPADATA_API_KEY set, Supadata fetcher is created.
+    """
+    monkeypatch.setenv("SUPADATA_API_KEY", "sup_test_key_123")
+
+    # Force reimport to pick up new env var
+    import importlib
+    import src.ingestion.transcript as mod
+    importlib.reload(mod)
+
+    fetcher = mod.YoutubeTranscriptFetcher()
+    assert fetcher._supadata is not None
+    assert fetcher._direct   is not None
+
+
+def test_invalid_url_raises_error():
+    """Non-YouTube URL raises InvalidYouTubeURLError."""
+    from src.ingestion.transcript import (
+        YoutubeTranscriptFetcher,
+        InvalidYoutubeURLError,
+    )
+    fetcher = YoutubeTranscriptFetcher()
+    with pytest.raises(InvalidYoutubeURLError):
+        fetcher.extract_video_id("https://google.com")
+
+
+def test_extract_video_id_all_formats():
+    """All YouTube URL formats parse correctly."""
+    from src.ingestion.transcript import YoutubeTranscriptFetcher
+    fetcher = YoutubeTranscriptFetcher()
+
+    cases = [
+        ("https://www.youtube.com/watch?v=ktrIQUYIxZo", "ktrIQUYIxZo"),
+        ("https://youtu.be/ktrIQUYIxZo",                "ktrIQUYIxZo"),
+        ("https://www.youtube.com/shorts/ktrIQUYIxZo",  "ktrIQUYIxZo"),
+        ("https://www.youtube.com/embed/ktrIQUYIxZo",   "ktrIQUYIxZo"),
+        ("https://www.youtube.com/watch?v=abc&t=120s",  "abc"),
+    ]
+
+    for url, expected_id in cases:
+        assert fetcher.extract_video_id(url) == expected_id, (
+            f"Failed for URL: {url}"
+        )
+
 def test_fetch_segments_have_content():
     """All segments have non-empty text and valid timestamps."""
     url = "https://www.youtube.com/watch?v=ktrIQUYIxZo"
