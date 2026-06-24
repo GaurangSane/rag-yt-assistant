@@ -37,7 +37,7 @@ def setup_logging() -> logging.Logger:
 
 @dataclass
 class EmbeddingConfig:
-    model_name           : str = "all-mpnet-base-v2"
+    model_name           : str = "all-MiniLM-L6-v2"
     dimensions           : int = 768
     batch_size           : int = 32
     normalize_embeddings : bool = True
