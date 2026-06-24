@@ -1,6 +1,6 @@
 import time
 import streamlit as st
-from src.config import validate_environment
+
 
 
 st.set_page_config(
