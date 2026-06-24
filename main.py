@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import threading
 
 logger = logging.getLogger("rag_app.api")
 
@@ -19,10 +20,38 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 _pipeline : RAGPipeline|None = None
+_pipeline_ready : bool                = False
+_warmup_complete: bool                = False
+
+def _run_warmup_in_background(pipeline: RAGPipeline) -> None:
+    global _warmup_complete
+
+    logger.info("Background warmup starting...")
+    warmup_start = time.time()
+
+    try:
+
+        pipeline._embedder.embed_query("warmup initialisation query")
+
+        warmup_time = time.time() - warmup_start
+        _warmup_complete = True
+        logger.info(
+            f"Background warmup complete | "
+            f"time={warmup_time:.2f}s"
+        )
+
+    except Exception as e:
+        logger.warning(
+            f"Background warmup failed (non-critical): {e}"
+        )
+        _warmup_complete = True
 
 @asynccontextmanager
 async def fastapi_life(app:FastAPI):
-    global _pipeline
+    global _pipeline,_pipeline_ready
+    logger.info("="*50)
+    logger.info("Server starting up...")
+    logger.info("="*50)
 
     try:
         validate_environment()
@@ -32,25 +61,33 @@ async def fastapi_life(app:FastAPI):
         raise
     logger.info("Pipeline loading started")
     load_start = time.time()
-    _pipeline = RAGPipeline()
+    try:
+        _pipeline = RAGPipeline()
+    except Exception as e:
+        logger.critical(f"Pipeline load failed: {e}")
+        raise
     time_required = time.time() - load_start
     logger.info(f"Pipeline loaded | time : {time_required} ")
 
-    logger.info("warming model")
-    try:
+    _pipeline_ready = True
 
-        warmup_start = time.time()
-        _pipeline._embedder.embed_query("warmup")
-        warmup_time = time.time() - warmup_start
-        logger.info(f"warmup completed | time : {warmup_time}")
-    except Exception as e:
-        logger.warning(f"warmup failed (not critical) | error : {e}")
+    warmup_thread = threading.Thread(
+        target  = _run_warmup_in_background,
+        args    = (_pipeline,),
+        daemon  = True,   # thread dies when server dies
+        name    = "model-warmup",
+    )
+    warmup_thread.start()
+    logger.info(
+        "Warmup started in background thread — "
+        "server accepting requests immediately"
+    )
 
-
-
+    # Server runs here
     yield
 
-    logger.info("server shutting down")
+    # Shutdown
+    logger.info("Server shutting down...")
 
 app = FastAPI(
     title="Youtube RAG Assistant API.",
@@ -201,12 +238,21 @@ async def pipeline_error_handler(
 )
 )
 async def health_check()->HealthResponse:
-    pipeline_loaded = _pipeline is not None
     return HealthResponse(
-        status="Healthy" if _pipeline else "degraded",
-        pipeline_loaded=pipeline_loaded,
-        version=app.version
+        status          = "healthy" if _pipeline_ready else "starting",
+        pipeline_loaded = _pipeline_ready,
+        warmup_complete = _warmup_complete,
+        version         = app.version,
     )
+
+@app.get("/ready")
+async def readiness_check():
+    if not _pipeline_ready:
+        return JSONResponse(
+            status_code = 503,
+            content     = {"ready": False, "reason": "Pipeline loading"},
+        )
+    return {"ready": True, "warmup_complete": _warmup_complete}
 
 @app.get(
     "/videos",
@@ -217,14 +263,10 @@ async def health_check()->HealthResponse:
 )
 async def get_video()->VideosResponse:
     if not _pipeline:
-        raise HTTPException(
-            status_code=503,
-            detail="Pipeline not loaded. Server may still be starting."
-        )
-    video_id = _pipeline.list_indexed_videos()
+        raise HTTPException(status_code=503, detail="Pipeline not loaded")
     return VideosResponse(
-        video_ids=video_id,
-        count=len(video_id)
+        video_ids = _pipeline.list_indexed_videos(),
+        count     = len(_pipeline.list_indexed_videos()),
     )
 
 app.state.limiter = limiter
@@ -245,7 +287,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 async def ingest_video(
     request : Request,
     payload : IngestRequest)->IngestResponse:
-    if _pipeline is None:
+    if not _pipeline:
         raise HTTPException(
             status_code=503,
             detail="pipeline not loaded"
@@ -291,7 +333,7 @@ async def ingest_video(
         f"POST /ingest | Complete |",
         f"video ID = {response.video_id}",
         f"chunk_count = {chunk_count}",
-        f"time = {ingest_time}"
+        f"time = {ingest_time:.1f}s"
     )
 
     return IngestResponse(
@@ -341,7 +383,7 @@ async def chat(request: Request,
             _pipeline.query,
             payload.video_url,
             payload.question,
-            history if history else None,
+            history or None,
         )
     except PipelineError:
         raise   
