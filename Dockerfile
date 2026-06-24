@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # This runs ONCE during docker build, not on every container start.
 # Models are stored in /root/.cache/huggingface inside the image.
 # Result: cold start goes from 4 minutes → 10 seconds.
-RUN python -c "
+RUN python - <<'PY'
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.cross_encoder import CrossEncoder
 import os
@@ -35,7 +35,7 @@ CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
 print('Reranker model downloaded.')
 
 print('All models cached successfully.')
-"
+PY
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────
 FROM python:3.11-slim
