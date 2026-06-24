@@ -64,8 +64,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # HuggingFace offline mode — prevents any runtime downloads
 # Models are already in /root/.cache/huggingface from builder
-ENV TRANSFORMERS_OFFLINE=1
-ENV HF_DATASETS_OFFLINE=1
+
 ENV SENTENCE_TRANSFORMERS_HOME=/root/.cache/huggingface/sentence_transformers
 
 # Port (Railway sets $PORT dynamically)
