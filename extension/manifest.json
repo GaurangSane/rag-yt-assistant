@@ -12,7 +12,7 @@
   ],
 
   "host_permissions": [
-    "http://localhost:8000/*"
+    "https://rag-yt-assistant-production.up.railway.app/*"
   ],
 
   "action": {

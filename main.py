@@ -103,16 +103,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = [
-        "http://localhost:8501",   
-        "http://localhost:3000",   
-        "chrome-extension://*",
+    allow_origins=[
+    "https://huggingface.co"
     ],
-    allow_credentials = True,
-    allow_methods     = ["GET", "POST", "OPTIONS"],
-    allow_headers     = ["*"],
-
-)
+    allow_origin_regex=r"chrome-extension://.*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    )
 
 class IngestRequest(BaseModel):
     video_url : str

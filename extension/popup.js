@@ -9,7 +9,7 @@
  */
 
 // ── Configuration ─────────────────────────────────────────────────────
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://rag-yt-assistant-production.up.railway.app";
 
 // ── State ─────────────────────────────────────────────────────────────
 let currentVideoUrl     = null;
@@ -286,7 +286,9 @@ async function checkServerHealth() {
 
 async function isVideoIndexed(videoId) {
   try {
-    const resp = await fetch(`${API_BASE}/videos`);
+    const resp = await fetch(`${API_BASE}/videos`, {
+    signal: AbortSignal.timeout(10000)
+});
     const data = await resp.json();
     console.log("[popup] Indexed videos:", data.video_ids);
     return data.video_ids.includes(videoId);
@@ -338,25 +340,56 @@ async function ingestVideo(videoUrl) {
 
 async function askQuestion(videoUrl, question, history) {
   console.log(`[popup] Asking: "${question}"`);
-  const resp = await fetch(`${API_BASE}/chat`, {
-    method : "POST",
-    headers: { "Content-Type": "application/json" },
-    body   : JSON.stringify({
-      video_url: videoUrl,
-      question : question,
-      history  : history,
-    }),
-  });
+  const controller = new AbortController();
 
-  if (!resp.ok) {
-    const err = await resp.json();
-    throw new Error(err.detail || "Chat request failed");
-  }
+    // Allow Railway up to 2 minutes
+    const timeout = setTimeout(() => {
+        controller.abort();
+    }, 120000);
 
-  const data = await resp.json();
-  console.log("[popup] Chat response:", data);
-  return data;
+    try {
+
+        const resp = await fetch(`${API_BASE}/chat`, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                video_url: videoUrl,
+                question : question,
+                history  : history,
+            }),
+
+            signal: controller.signal
+
+        });
+
+        clearTimeout(timeout);
+
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.detail || "Chat request failed");
+        }
+
+        return await resp.json();
+
+    } catch (e) {
+
+        clearTimeout(timeout);
+
+        if (e.name === "AbortError") {
+            throw new Error(
+                "The server took too long to respond. Please try again."
+            );
+        }
+
+        throw e;
+    }
 }
+
 
 
 // ════════════════════════════════════════════════════════════════════
@@ -460,15 +493,18 @@ async function initialise() {
 
   // ── Step 1: Server health ─────────────────────────────────────
   const serverOk = await checkServerHealth();
+
   if (!serverOk) {
-    showError(
-      "Cannot connect to the API server.\n\n" +
-      "Make sure it is running:\n" +
-      "uvicorn main:app --port 8000\n\n" +
-      "Then click Retry."
-    );
-    setStatus("Server offline", "red");
-    return;
+
+      showError(
+          "Backend is starting or temporarily unavailable.\n\n" +
+          "If this is the first request, Railway may be waking up.\n\n" +
+          "Wait 30 seconds and click Retry."
+      );
+
+      setStatus("Starting backend...", "yellow");
+
+      return;
   }
 
   setStatus("Connected", "green");
