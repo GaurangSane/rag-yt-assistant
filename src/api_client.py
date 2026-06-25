@@ -78,7 +78,7 @@ class RAGApiClient:
                 "question" : question,
                 "history"  : history or [],
             },
-            timeout = 60,
+            timeout = 120,
         )
         resp.raise_for_status()
         data = resp.json()

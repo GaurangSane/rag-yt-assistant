@@ -18,8 +18,10 @@ from src.retrieval.retriever import (
 )
 from src.retrieval.reranker import (
     CrossEncoderReranker,
+    ScoreFusionReranker,
     RankedResult,
     RerankerError,
+    get_reranker,
 )
 
 __all__ = [

@@ -135,7 +135,8 @@ class RAGPipeline:
             store           = self._store,
             embedding_model = self._embedder,
         )
-        self._reranker    = CrossEncoderReranker()  
+        from src.retrieval.reranker import get_reranker
+        self._reranker = get_reranker() 
 
         self._prompt_builder = PromptBuilder()
         self._generator      = LLMGenerator()
