@@ -388,11 +388,16 @@ def render_chat_interface() -> None:
                     help = "Click to ask this question",
                 ):
                     # Trigger the question as if user typed it
-                    _handle_user_question(q)
+                    st.session_state.pending_prompt = q
                     st.rerun()
     
     for message in st.session_state.messages:
         _render_message(message)
+    # Handle example question clicked
+    if "pending_prompt" in st.session_state:
+        prompt = st.session_state.pending_prompt
+        del st.session_state.pending_prompt
+        _handle_user_question(prompt)
 
     
     prompt = st.chat_input(
@@ -416,8 +421,8 @@ def _render_message(message: dict) -> None:
             st.write(message["content"])
 
         else:
-            # Assistant messages — render as markdown so
-            # **bold**, bullet points, and citations format nicely
+
+        
             st.markdown(message["content"])
 
             if message.get("answer_grounded") and message.get("sources"):
@@ -492,27 +497,21 @@ def _handle_user_question(prompt: str) -> None:
     st.session_state.messages.append(user_message)
     _render_message(user_message)
 
-    with st.chat_message("assistant"):
-        with st.spinner("🤔 Thinking..."):
-            try:
+    
+    with st.spinner("🤔 Thinking..."):
+        try:
                 # Convert ConversationTurn objects to dicts for API
-                history = [
-                    {
-                        "question": turn.question,
-                        "answer"  : turn.answer,
-                    }
-                    for turn in st.session_state.conversation_history
-                ]
+            history = st.session_state.conversation_history
 
-                response = client.chat(
+            response = client.chat(
                     youtube_url = st.session_state.video_url,
                     question    = prompt,
                     history     = history,
                 )
-                error = None
-            except Exception as e:
-                response = None
-                error    = str(e)
+            error = None
+        except Exception as e:
+            response = None
+            error    = str(e)
 
     if error:
         assistant_message = {
@@ -543,12 +542,12 @@ def _handle_user_question(prompt: str) -> None:
     _render_message(assistant_message)
 
     if not error and response.answer_grounded:
-        from src.pipeline import ConversationTurn
+
         st.session_state.conversation_history.append(
-            ConversationTurn(
-                question = prompt,
-                answer   = response.answer,
-            )
+            {
+                "question" : prompt,
+                "answer"   : response.answer,
+            }
         )
 
 
