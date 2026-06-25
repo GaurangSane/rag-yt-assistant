@@ -96,6 +96,7 @@ class HybridRetriever:
         self._store           = store
         self._embedding_model = embedding_model
         self._bm25_cache      : dict[str, _BM25Index] = {}
+        self._vector_cache    = {}
         self._rrf_k           = settings.retrieval.rrf_k
 
         logger.info("HybridRetriever initialized")
@@ -150,25 +151,47 @@ class HybridRetriever:
           List of normalised embedding vectors, one per query.
           Order preserved — vectors[i] corresponds to queries[i].
         """
-        batch_start = time.time()
+        vectors = []
+        uncached_queries  = []
+        uncached_indices  = []
 
-        vectors = self._embedding_model.model.encode(
-            queries,
-            batch_size           = len(queries),
-            normalize_embeddings = settings.embedding.normalize_embeddings,
-            show_progress_bar    = False,
-            convert_to_numpy     = True,
-        )
+        # Check cache for each query
+        for i, query in enumerate(queries):
+            cache_key = query.lower().strip()
+            if cache_key in self._vector_cache:
+                vectors.append(self._vector_cache[cache_key])
+                logger.debug(f"Vector cache hit | query='{query[:40]}'")
+            else:
+                vectors.append(None)             # placeholder
+                uncached_queries.append(query)
+                uncached_indices.append(i)
 
-        batch_time = (time.time() - batch_start) * 1000
-        logger.info(
-            f"Batch embedding | "
-            f"queries={len(queries)} | "
-            f"time={batch_time:.0f}ms | "
-            f"avg={batch_time/len(queries):.0f}ms per query"
-        )
+        # Embed only the uncached queries
+        if uncached_queries:
+            batch_start = time.time()
+            new_vectors = self._embedding_model.model.encode(
+                uncached_queries,
+                batch_size           = len(uncached_queries),
+                normalize_embeddings = settings.embedding.normalize_embeddings,
+                show_progress_bar    = False,
+                convert_to_numpy     = True,
+            )
+            batch_time = (time.time() - batch_start) * 1000
+            logger.info(
+                f"Batch embedding | "
+                f"queries={len(uncached_queries)} | "
+                f"time={batch_time:.0f}ms"
+            )
 
-        return [vec.tolist() for vec in vectors]
+            # Store in cache and fill placeholders
+            for idx, query, vector in zip(
+                uncached_indices, uncached_queries, new_vectors
+            ):
+                cache_key = query.lower().strip()
+                self._vector_cache[cache_key] = vector.tolist()
+                vectors[idx] = vector.tolist()
+
+        return vectors
 
     # ── Search Methods ─────────────────────────────────────────────────
     def _semantic_search_with_vector(
