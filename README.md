@@ -18,7 +18,7 @@
 
 <br/>
 
-### 🌐 [Live Web App](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) &nbsp;·&nbsp; 📚 [API Docs](https://your-app.railway.app/docs) &nbsp;·&nbsp; 🔌 [Chrome Extension](https://github.com/GaurangSane/rag-yt-assistant/releases/tag/v1.0.0)
+### 🌐 [Live Web App](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) &nbsp;·&nbsp; 📚 [API Docs](https://rag-yt-assistant-production.up.railway.app/docs) &nbsp;·&nbsp; 🔌 [Chrome Extension](https://github.com/GaurangSane/rag-yt-assistant/releases/tag/v1.0.0)
 
 </div>
 
@@ -51,8 +51,8 @@ System →  "As explained at [5:15], gradient descent minimizes the loss
 | | Link | Description |
 |---|---|---|
 | 🌐 **Web App** | [HuggingFace Spaces](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) | Paste URL → chat in browser |
-| 📚 **API** | [Interactive Docs](https://your-app.railway.app/docs) | REST API, fully documented |
-| 🔌 **Chrome Extension** | [Download Free](https://github.com/GaurangSane/yt-rag-assistant/releases/latest) | Chat inside YouTube |
+| 📚 **API** | [Interactive Docs](https://rag-yt-assistant-production.up.railway.app/docs) | REST API, fully documented |
+| 🔌 **Chrome Extension** | [Download Free](https://github.com/GaurangSane/rag-yt-assistant/releases/tag/v1.0.0) | Chat inside YouTube |
 
 ### Chrome Extension — Install In 2 Minutes
 
