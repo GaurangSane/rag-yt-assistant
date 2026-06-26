@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from src.pipeline import RAGPipeline,ConversationTurn,PipelineError
 from fastapi import FastAPI,HTTPException,Request
 from fastapi.middleware.cors import CORSMiddleware
-from src.config import validate_environment
+from src.config import validate_environment,settings
 from pydantic import BaseModel,field_validator
 import asyncio
 from functools import partial
@@ -269,6 +269,51 @@ async def get_video()->VideosResponse:
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.get("/storage")
+async def storage_status():
+    """
+    GET /storage
+
+    Returns storage statistics:
+      - How many videos indexed
+      - Total chunks stored
+      - Disk usage estimate
+      - Per-video breakdown
+    """
+    if not _pipeline:
+        raise HTTPException(status_code=503, detail="Pipeline not loaded")
+
+    video_ids   = _pipeline.list_indexed_videos()
+    video_stats = []
+    total_chunks = 0
+
+    for vid_id in video_ids:
+        try:
+            count = _pipeline._store.count(vid_id)
+            total_chunks += count
+            video_stats.append({
+                "video_id"   : vid_id,
+                "chunks"     : count,
+                "youtube_url": f"https://youtube.com/watch?v={vid_id}",
+            })
+        except Exception as e:
+            video_stats.append({
+                "video_id": vid_id,
+                "error"   : str(e),
+            })
+
+    # Estimate storage: ~384 floats × 4 bytes × chunks + metadata
+    estimated_mb = (total_chunks * 384 * 4) / (1024 * 1024)
+
+    return {
+        "videos_indexed" : len(video_ids),
+        "total_chunks"   : total_chunks,
+        "estimated_mb"   : round(estimated_mb, 2),
+        "videos"         : video_stats,
+        "chroma_path"    : str(settings.vector_db.persist_dir),
+    }
 
 @app.post(
     "/ingest",
