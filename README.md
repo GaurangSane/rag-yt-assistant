@@ -2,139 +2,116 @@
 
 # 🎬 YouTube RAG Assistant
 
-### Ask anything about any YouTube video. Get timestamped, cited answers in seconds.
+### Chat with any YouTube video. Get AI answers with exact timestamps.
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![LangChain](https://img.shields.io/badge/LangChain-Ready-1C3C3C?style=for-the-badge&logo=chainlink&logoColor=white)](https://langchain.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-FF6B35?style=for-the-badge)](https://trychroma.com)
 [![Groq](https://img.shields.io/badge/Groq-LLaMA3-F55036?style=for-the-badge)](https://groq.com)
+[![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
 [![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Active_Development-6366F1?style=for-the-badge)]()
+[![Tests](https://img.shields.io/badge/Tests-206_passing-6366F1?style=for-the-badge)]()
 
 <br/>
 
-> **Production-grade RAG system** that transforms any YouTube video into an interactive knowledge base.  
-> Ask questions, get grounded answers with exact timestamps — no hallucinations, no guessing.
+> **Production-grade RAG system** — paste any YouTube URL, ask anything, get grounded answers with clickable timestamp citations. Built from scratch. Deployed. 206 tests.
 
 <br/>
 
+### 🌐 [Live Web App](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) &nbsp;·&nbsp; 📚 [API Docs](https://your-app.railway.app/docs) &nbsp;·&nbsp; 🔌 [Chrome Extension](https://github.com/GaurangSane/yt-rag-assistant/releases/latest)
 
 </div>
 
 ---
 
-## 📌 The Problem This Solves
+## 🎯 The Problem
 
-You find a 2-hour YouTube video on a topic you're learning. You want to know what it says about one specific concept. Your options today:
+You find a 2-hour YouTube video. You need one specific answer. Your options:
 
-- ❌ Watch the entire video hoping to find it
-- ❌ Scrub through manually — slow and imprecise  
-- ❌ Read auto-generated chapters — too vague
+❌ Watch the entire video &nbsp;·&nbsp; ❌ Scrub through manually &nbsp;·&nbsp; ❌ Read vague auto-chapters
 
 **With YouTube RAG Assistant:**
 
 ```
-You    → "How does gradient descent work in this video?"
+You    →  "How does gradient descent work in this video?"
 
-System → "As explained at [5:15], gradient descent is an optimization 
-          algorithm that minimizes the loss function by iteratively 
-          adjusting weights. The video further clarifies at [8:42] 
-          that the learning rate controls how large each step is..."
+System →  "As explained at [5:15], gradient descent minimizes the loss
+           function by iteratively adjusting weights. The video clarifies
+           at [8:42] that the learning rate controls step size..."
 
-          📍 Sources: [5:15 → 6:17], [8:42 → 9:30]
+           📍 [▶ 5:15 → 6:17]  [▶ 8:42 → 9:30]  ← click to jump
 ```
 
-Exact answer. Exact timestamps. Zero hallucination.
+**Exact answer. Exact timestamp. Click to verify. Zero hallucination.**
+
+---
+
+## 🚀 Three Ways To Use It
+
+| | Link | Description |
+|---|---|---|
+| 🌐 **Web App** | [HuggingFace Spaces](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) | Paste URL → chat in browser |
+| 📚 **API** | [Interactive Docs](https://your-app.railway.app/docs) | REST API, fully documented |
+| 🔌 **Chrome Extension** | [Download Free](https://github.com/GaurangSane/yt-rag-assistant/releases/latest) | Chat inside YouTube |
+
+### Chrome Extension — Install In 2 Minutes
+
+```
+1. Download ZIP from the link above → unzip it
+2. Open Chrome → go to chrome://extensions
+3. Toggle Developer mode ON (top right)
+4. Click "Load unpacked" → select the unzipped folder
+5. Open any YouTube video → click the extension icon → start chatting
+```
 
 ---
 
 ## ✨ Key Features
 
-| Feature | Description |
+| Feature | What it does |
 |---|---|
-| 🕐 **Timestamp Citations** | Every answer cites the exact minute:second of the video |
-| 🔍 **Hybrid Search** | Combines semantic (meaning-based) + BM25 (keyword) search |
-| 🎯 **Cross-Encoder Reranking** | Deep relevance scoring picks the truly best chunks |
-| 🔄 **Multi-Query Retrieval** | Generates 3 search variants per question for maximum coverage |
-| 💬 **Conversation Memory** | Context-aware follow-up questions work naturally |
-| 🛡️ **Hallucination Guard** | Refuses to answer outside video content — never makes things up |
-| ⚡ **Smart Re-ingestion** | Already-indexed videos skip processing — instant responses |
-| 🏗️ **Production Architecture** | Modular codebase, logging, tests, config management |
+| 🕐 **Timestamp Citations** | Every answer cites exact `[MM:SS]` with a clickable YouTube jump link |
+| 🔍 **Hybrid Search** | BM25 keyword + semantic embedding + Reciprocal Rank Fusion |
+| 🎯 **Score Fusion Reranking** | Replaced CrossEncoder (26s) with score fusion (0ms) — 4.5× faster |
+| 🔄 **Multi-Query Generation** | Rewrites each question into 2 search variants via LLaMA3 |
+| 💬 **Conversation Memory** | Follow-up questions resolve correctly using prior context |
+| 🛡️ **Hallucination Guard** | Refuses to answer anything not found in the video |
+| ⚡ **Smart Re-ingestion** | Videos indexed once — second question responds instantly |
+| 🌐 **Cloud-Safe Transcripts** | Supadata API primary + direct fetch fallback — no IP blocking |
 
 ---
 
 ## 🏗️ Architecture
 
-The system is divided into two worlds that run at different times:
+Two worlds that run at different times:
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║                    WORLD 1 — INGESTION                           ║
-║                  (Runs once per video)                           ║
+║              WORLD 1 — INGESTION (runs once per video)           ║
 ║                                                                  ║
-║   YouTube URL                                                    ║
-║       │                                                          ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  1. Transcript      │  youtube-transcript-api v0.7+          ║
-║   │     Fetcher         │  → raw text + timestamps per segment   ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  2. Chunker         │  Sliding window: 60s chunks, 15s overlap║
-║   │                     │  → preserves timestamps on every chunk ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  3. Embedding Model │  all-mpnet-base-v2 (768 dimensions)    ║
-║   │                     │  → semantic vector per chunk           ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  4. Vector Database │  ChromaDB (persistent, cosine metric)  ║
-║   │                     │  → indexed for millisecond search      ║
-║   └─────────────────────┘                                        ║
+║  YouTube URL → Supadata API → Transcript + Timestamps            ║
+║       ↓                                                          ║
+║  Chunker (60s windows, 15s overlap) → Chunk objects              ║
+║       ↓                                                          ║
+║  all-MiniLM-L6-v2 (batch encode) → 384-dim vectors              ║
+║       ↓                                                          ║
+║  ChromaDB (persistent, cosine metric) → Indexed ✅               ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ╔══════════════════════════════════════════════════════════════════╗
-║                  WORLD 2 — RETRIEVAL + GENERATION                ║
-║                  (Runs on every user question)                   ║
+║         WORLD 2 — RETRIEVAL + GENERATION (every question)        ║
 ║                                                                  ║
-║   User Question                                                  ║
-║       │                                                          ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  5. Query           │  Groq LLaMA3 generates 3 variants      ║
-║   │     Transformer     │  + resolves pronouns from history      ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  6. Hybrid          │  Semantic search (ChromaDB)            ║
-║   │     Retriever       │  + BM25 keyword search                 ║
-║   │                     │  → fused via Reciprocal Rank Fusion    ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  7. Reranker        │  ms-marco-MiniLM cross-encoder         ║
-║   │                     │  → deep pairwise scoring, top 3 kept   ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  8. Prompt Builder  │  Structured prompt with timestamp      ║
-║   │                     │  headers + hallucination guard         ║
-║   └──────────┬──────────┘                                        ║
-║              │                                                   ║
-║       ▼                                                          ║
-║   ┌─────────────────────┐                                        ║
-║   │  9. LLM Generation  │  Groq (LLaMA3-8b, temp=0.3)           ║
-║   │                     │  → grounded answer with citations      ║
-║   └─────────────────────┘                                        ║
+║  User Question → LLaMA3 (Groq) → 2 search query variants        ║
+║       ↓                                                          ║
+║  Batch embed all queries in ONE forward pass                     ║
+║       ↓                                                          ║
+║  Semantic (ChromaDB) + BM25 → Reciprocal Rank Fusion             ║
+║       ↓                                                          ║
+║  Score Fusion Reranker → Top 3 chunks selected                   ║
+║       ↓                                                          ║
+║  Structured prompt + hallucination guard → Groq LLaMA3           ║
+║       ↓                                                          ║
+║  Grounded answer with [▶ timestamp] citations ✅                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -144,16 +121,17 @@ The system is divided into two worlds that run at different times:
 
 | Layer | Technology | Why |
 |---|---|---|
-| **Language** | Python 3.11 | Stable, broad ML ecosystem support |
-| **Transcript** | `youtube-transcript-api` v0.7+ | Free, timestamped, no API key needed |
-| **Embeddings** | `all-mpnet-base-v2` | Best free local model, 768-dim vectors |
-| **Vector DB** | ChromaDB (persistent) | Zero setup, cosine similarity, local |
-| **Keyword Search** | `rank-bm25` (BM25Okapi) | Exact term matching complements semantic |
-| **Reranker** | `ms-marco-MiniLM-L-6-v2` | Cross-encoder, free, purpose-built |
-| **LLM** | Groq + LLaMA3-8b | Free tier, fastest inference (LPU hardware) |
-| **Backend** | FastAPI *(coming)* | Async, auto-docs, production-grade |
-| **UI** | Streamlit *(coming)* | Fast to build, clean chat interface |
-| **Deployment** | Railway + HuggingFace *(coming)* | Free tier, live URL for portfolio |
+| **Language** | Python 3.11 | Stable, full ML ecosystem |
+| **Transcript** | Supadata API + youtube-transcript-api | Cloud-proof: no IP blocking |
+| **Embeddings** | `all-MiniLM-L6-v2` (384-dim) | Fast, free, runs on CPU |
+| **Vector DB** | ChromaDB (persistent volume) | Zero setup, cosine search |
+| **Keyword Search** | BM25Okapi (`rank-bm25`) | Exact term matching |
+| **Reranker** | Score Fusion (cloud) / CrossEncoder (local) | 0ms cloud, quality local |
+| **LLM** | Groq + LLaMA3-8b-instant | Free tier, fastest inference |
+| **Backend** | FastAPI + uvicorn | Async, auto-docs, rate limiting |
+| **UI** | Streamlit | Fast chat interface |
+| **Extension** | Chrome MV3 (Side Panel) | Persistent, stays open |
+| **Deployment** | Railway (API) + HuggingFace (UI) | Free tier, persistent storage |
 
 ---
 
@@ -162,331 +140,336 @@ The system is divided into two worlds that run at different times:
 ```
 yt-rag-assistant/
 │
-├── 📂 src/                          
-│   ├── config.py                    
+├── 📂 src/                           # All business logic
+│   ├── config.py                     # Centralized settings (@dataclass)
+│   ├── api_client.py                 # HTTP client for Streamlit → FastAPI
 │   │
-│   ├── 📂 ingestion/                
-│   │   ├── transcript.py            
-│   │   ├── chunker.py               
-│   │   └── embedder.py              
+│   ├── 📂 ingestion/
+│   │   ├── transcript.py             # Supadata + direct fetch + fallback
+│   │   ├── chunker.py                # Sliding window with overlap
+│   │   └── embedder.py               # Singleton, batch encode
 │   │
-│   ├── 📂 storage/                  
-│   │   └── vector_store.py          
+│   ├── 📂 storage/
+│   │   └── vector_store.py           # ChromaDB repository pattern
 │   │
-│   ├── 📂 retrieval/                
-│   │   ├── query_transformer.py     
-│   │   ├── retriever.py             
-│   │   └── reranker.py              
+│   ├── 📂 retrieval/
+│   │   ├── query_transformer.py      # Multi-query via Groq
+│   │   ├── retriever.py              # Hybrid search + RRF + vector cache
+│   │   └── reranker.py               # ScoreFusion (cloud) / CrossEncoder
 │   │
-│   ├── 📂 generation/               
-│   │   ├── prompt_builder.py        
-│   │   └── generator.py             
+│   ├── 📂 generation/
+│   │   ├── prompt_builder.py         # Structured prompt + guard
+│   │   └── generator.py              # Groq call + retry logic
 │   │
-│   └── pipeline.py                  
+│   └── pipeline.py                   # 9-step orchestrator
 │
-├── 📂 tests/                        
+├── 📂 tests/                         # 206 tests, all passing
 │   ├── test_transcript.py
 │   ├── test_chunker.py
+│   ├── test_embedder.py
+│   ├── test_vector_store.py
+│   ├── test_query_transformer.py
 │   ├── test_retriever.py
+│   ├── test_reranker.py
+│   ├── test_prompt_builder.py
+│   ├── test_generator.py
 │   └── test_pipeline.py
 │
+├── 📂 extension/                     # Chrome Extension (MV3)
+│   ├── manifest.json
+│   ├── popup.html
+│   ├── popup.js
+│   ├── content.js
+│   └── background.js
+│
 ├── 📂 notebooks/
-│   └── 01_rag_prototype.ipynb       
+│   └── 01_rag_prototype.ipynb        # Original 9-step prototype
 │
-├── 📂 data/                         
-├── 📂 chroma_db/                    
-├── 📂 logs/                         
-│
-├── app.py                           
-├── main.py                          
-├── .env                             
-├── .gitignore
+├── app.py                            # Streamlit UI
+├── main.py                           # FastAPI server
+├── Dockerfile                        # Pre-downloads models at build time
+├── railway.json                      # Railway deployment config
 ├── requirements.txt
-└── README.md
+└── .env.example
 ```
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Start (Local)
 
 ### Prerequisites
-
 - Python 3.11+
-- A free [Groq API key](https://console.groq.com)
-- Git
+- Free [Groq API key](https://console.groq.com)
+- Free [Supadata API key](https://supadata.ai)
 
-### 1. Clone and Setup
+### Setup
 
 ```bash
 git clone https://github.com/GaurangSane/yt-rag-assistant.git
 cd yt-rag-assistant
 
 python3.11 -m venv venv
-source venv/bin/activate        
+source venv/bin/activate          # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### Configure
 
 ```bash
 cp .env.example .env
-
-echo "GROQ_API_KEY=your_key_here" >> .env
+# Edit .env:
+# GROQ_API_KEY=your_groq_key
+# SUPADATA_API_KEY=your_supadata_key
 ```
 
-### 3. Validate Setup
+### Run FastAPI Backend
 
 ```bash
-python -c "from src.config import validate_environment; validate_environment()"
+uvicorn main:app --reload --port 8000
+# Docs at: http://localhost:8000/docs
 ```
 
-### 4. Run the Pipeline
-
-```python
-from src.pipeline import rag_pipeline
-
-result = rag_pipeline(
-    youtube_url   = "https://www.youtube.com/watch?v=your_video_id",
-    user_question = "What is the main concept explained in this video?"
-)
-
-print(result["answer"])
-
-for source in result["sources"]:
-    print(f"  📍 [{source['timestamp']} → {source['end_time']}]")
-```
-
----
-
-## 🧪 Running Tests
+### Run Streamlit UI
 
 ```bash
-pytest tests/ -v
+streamlit run app.py
+# Opens at: http://localhost:8501
+```
 
-pytest tests/test_transcript.py -v
-pytest tests/test_chunker.py -v
+### Run Tests
 
-pytest tests/ --cov=src --cov-report=term-missing
+```bash
+pytest tests/ -v --tb=short -m "not integration"
+# 206 tests, all green
 ```
 
 ---
 
-## 🔬 Advanced RAG Techniques Implemented
+## 📡 API Reference
 
-This project goes well beyond a basic RAG tutorial. Here is what makes it production-grade:
+### POST `/ingest`
+Index a YouTube video. Idempotent — safe to call multiple times.
 
-### 1. 🕐 Timestamp-Aware Chunking
-Every chunk carries its exact video position. Answers cite `[4:32]` — not vague references but clickable, precise timestamps. No other basic RAG demo does this correctly.
-
-### 2. 🔍 Hybrid Search (Semantic + BM25)
-```
-Semantic search alone:  catches meaning, misses exact technical terms
-BM25 alone:             catches exact terms, misses conceptual synonyms
-Both combined:          catches everything ✅
+```bash
+curl -X POST https://your-app.railway.app/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"video_url": "https://youtube.com/watch?v=aircAruvnKk"}'
 ```
 
-### 3. 🎲 Reciprocal Rank Fusion (RRF)
-Six search lists (3 queries × 2 methods) merged by the formula `score = Σ 1/(rank + 60)`. Chunks appearing consistently across multiple searches score highest.
-
-### 4. 🎯 Cross-Encoder Reranking
-```
-Bi-encoder (retrieval): encodes question and chunk separately → fast, shallow
-Cross-encoder (reranking): reads [question + chunk] jointly → slow, deep
-
-Two-stage pipeline: retrieve many cheaply → rerank few accurately
+```json
+{
+  "video_id"   : "aircAruvnKk",
+  "chunk_count": 25,
+  "was_cached" : false,
+  "message"    : "Successfully indexed 25 chunks in 8.3s."
+}
 ```
 
-### 5. 🔄 Multi-Query Generation
-One question → three differently-phrased search queries → wider retrieval net → better coverage.
+### POST `/chat`
+Ask a question about an indexed video.
 
-### 6. 💬 Conversation Memory
-Last 3 conversation turns included in context. Vague follow-ups like *"explain that more simply"* resolve correctly because prior context travels through the entire pipeline.
+```bash
+curl -X POST https://your-app.railway.app/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "https://youtube.com/watch?v=aircAruvnKk",
+    "question" : "what is the main topic?",
+    "history"  : []
+  }'
+```
 
-### 7. 🛡️ Hallucination Guard
-Explicit system instruction: *if the answer is not in the provided video segments, say so — never answer from general knowledge.* Test 3 in the pipeline verifies this works on every run.
+```json
+{
+  "answer"          : "As explained at [0:45], the video covers...",
+  "answer_grounded" : true,
+  "sources"         : [
+    {
+      "rank"        : 1,
+      "start_time"  : "0:45",
+      "display"     : "[0:45 → 1:47]",
+      "youtube_link": "https://youtube.com/watch?v=aircAruvnKk&t=45s"
+    }
+  ],
+  "queries_used" : ["main topic neural networks", "..."],
+  "latency"      : {"total_ms": 14689, "retrieval_ms": 13885}
+}
+```
+
+### GET `/health` · GET `/storage` · GET `/videos`
+
+```bash
+curl https://your-app.railway.app/health
+# {"status": "healthy", "pipeline_loaded": true, "warmup_complete": true}
+
+curl https://your-app.railway.app/storage
+# {"videos_indexed": 3, "total_chunks": 105, "estimated_mb": 0.61}
+
+curl https://your-app.railway.app/videos
+# {"video_ids": ["aircAruvnKk", "..."], "count": 3}
+```
 
 ---
 
-## 📊 Performance Benchmarks
+## 📊 Performance
 
-> Tested on an 18-minute YouTube video (25 chunks after ingestion)
+> Measured on Railway free tier CPU — real production deployment
 
-| Operation | Time | Notes |
-|---|---|---|
-| Transcript fetch | ~1.5s | Network dependent |
-| Chunking (25 chunks) | ~0.01s | Pure Python, instant |
-| Embedding (25 chunks) | ~5s | Local CPU, one-time cost |
-| Vector DB storage | ~0.2s | ChromaDB write |
-| **Total ingestion** | **~7s** | **One time per video** |
-| Query transformation | ~0.8s | Groq API call |
-| Hybrid retrieval | ~0.1s | ChromaDB + BM25 |
-| Reranking (5→3 chunks) | ~0.3s | Local cross-encoder |
-| LLM generation | ~1.2s | Groq LPU, very fast |
-| **Total per question** | **~2.4s** | **Every question** |
+| Metric | Before | After | Improvement |
+|---|---|---|---|
+| **Server startup** | 4+ minutes | 3.2 seconds | **75× faster** |
+| **Response latency** | 65.5 seconds | ~15 seconds | **4.5× faster** |
+| **Reranking** | 26,000ms | 0.0ms | **Eliminated** |
+| **Embedding (batch)** | 38,700ms | ~14,000ms | **2.7× faster** |
+| **Timeout errors** | Yes | None | **Fixed ✅** |
+
+Every improvement came from reading actual production logs, not guessing:
+
+```
+"Batch embedding | queries=2 | time=38700ms" → found 3 sequential calls
+→ Fix: encode([q1, q2]) in one forward pass → 14,000ms
+
+"Score fusion reranking | time=0.0ms"
+→ CrossEncoder (26s) replaced with weighted score fusion
+
+"RAGPipeline ready | init_time=3215ms"
+→ Dockerfile pre-bakes models → was 4+ minutes of downloading
+```
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 1 — Notebook Prototype (Complete)
-- [x] Step 1: YouTube transcript fetcher with timestamps
-- [x] Step 2: Timestamp-based chunker with sliding window
-- [x] Step 3: Embedding with `all-mpnet-base-v2`
-- [x] Step 4: ChromaDB persistent vector store
-- [x] Step 5: Multi-query transformer (Groq + LLaMA3)
-- [x] Step 6: Hybrid retriever (Semantic + BM25 + RRF)
-- [x] Step 7: Cross-encoder reranker
-- [x] Step 8: Structured prompt builder with hallucination guard
-- [x] Step 9: End-to-end pipeline orchestration with conversation memory
+### ✅ Phase 1 — Notebook Prototype
+- [x] 9-step RAG pipeline end-to-end in Jupyter
+- [x] Transcript → chunks → embeddings → vector store → retrieval → answer
 
-### 🔄 Phase 2 — Modular Production Codebase (In Progress)
-- [x] Project scaffold and folder structure
-- [x] Centralized config with `@dataclass` settings
-- [x] `src/ingestion/transcript.py` — custom exceptions, logging, dataclasses
-- [x] `src/ingestion/chunker.py`
-- [x] `src/ingestion/embedder.py`
-- [x] `src/storage/vector_store.py`
-- [x] `src/retrieval/query_transformer.py`
-- [x] `src/retrieval/retriever.py`
-- [x] `src/retrieval/reranker.py`
-- [x] `src/generation/prompt_builder.py`
-- [x] `src/generation/generator.py`
-- [x] `src/pipeline.py` — clean orchestrator
-- [x] Unit tests for every module
+### ✅ Phase 2 — Modular Production Codebase
+- [x] 10 modules, custom exceptions, logging, type hints
+- [x] 206 automated tests — every module independently testable
+- [x] Centralized `@dataclass` config, singleton patterns, repository pattern
 
-### ⬜ Phase 3 — Streamlit Web App
-- [x] PDF/YouTube URL upload interface
-- [x] Chat UI with message history
-- [x] Timestamp source display with video links
-- [x] Session state management
+### ✅ Phase 3 — Streamlit Web App
+- [x] Chat UI, session state, hallucination-aware source display
+- [x] API client mode — Streamlit calls FastAPI backend
 
-### ⬜ Phase 4 — FastAPI Backend
-- [ ] `POST /ingest` — accepts YouTube URL, runs ingestion pipeline
-- [ ] `POST /chat` — accepts question + history, returns answer + sources
-- [ ] `GET /health` — health check endpoint
-- [ ] Pydantic request/response models
-- [ ] Async endpoints
+### ✅ Phase 4 — FastAPI Backend
+- [x] `/ingest`, `/chat`, `/health`, `/storage`, `/videos`
+- [x] Rate limiting, CORS, global error handling, async execution
 
-### ⬜ Phase 5 — Chrome Extension
-- [ ] Detects YouTube video URL automatically
-- [ ] Popup chat interface on any YouTube page
-- [ ] Auto-ingests video on page load
-- [ ] Connects to FastAPI backend
+### ✅ Phase 5 — Chrome Extension (MV3)
+- [x] Side Panel (stays open while watching)
+- [x] Auto-detect video, programmatic injection, MutationObserver
+- [x] Persistent history, graceful cold-start retry
 
-### ⬜ Phase 6 — Deployment
-- [ ] FastAPI backend on Railway (free tier)
-- [ ] Streamlit UI on HuggingFace Spaces (free tier)
-- [ ] Chrome extension published (or GitHub + demo video)
-- [ ] Live URLs in portfolio
+### ✅ Phase 6 — Deployment
+- [x] FastAPI on Railway (persistent volume, Dockerfile pre-bake)
+- [x] Streamlit on HuggingFace Spaces
+- [x] Supadata for cloud-proof transcripts
+- [x] UptimeRobot keep-alive, GitHub Release
 
-### ⬜ Production Upgrades (Future)
-- [ ] Swap ChromaDB → Pinecone for cloud-native vector storage
-- [ ] Swap local reranker → Cohere Rerank API
-- [ ] Swap local embeddings → OpenAI `text-embedding-3-small`
-- [ ] Add Redis caching for repeated questions on same video
-- [ ] Support multiple videos in one session
-- [ ] Evaluation framework with Ragas metrics
+### 🔜 Future
+- [ ] Pinecone for cloud-native vector storage
+- [ ] RAGAS evaluation metrics display
+- [ ] Multi-video cross-search
+- [ ] Playlist support
+- [ ] Chrome Web Store listing
+- [ ] Chapter-aware chunking
 
 ---
 
-## 🧠 What I Learned Building This
+## 🔍 Advanced Techniques Used
 
-This project was built as a deep learning exercise — understanding every component before writing a single line. Key concepts internalized:
+### Hybrid Search + RRF
+```
+Both BM25 (keyword) + semantic run for each query variant.
+All result lists merged: score = Σ 1/(rank + 60) across lists.
+Chunks appearing in multiple lists rank highest — naturally surfaces consensus.
+```
 
-**RAG Architecture**
-- The two-world separation (ingestion vs retrieval) and why it matters for performance
-- Why vector DBs exist and what SQL databases fundamentally cannot do
+### Batch Query Embedding
+```
+Before: embed(q1) → 12s, embed(q2) → 12s = 24s sequential
+After:  encode([q1, q2]) = 14s total in one forward pass
+```
 
-**Retrieval Engineering**
-- Bi-encoder vs cross-encoder: different architectures for different stages
-- Why hybrid search (semantic + keyword) outperforms either alone
-- Reciprocal Rank Fusion mathematics and why `k=60` is the standard constant
+### Score Fusion Reranking
+```python
+final_score = (0.6 × normalised_semantic) +
+              (0.3 × normalised_rrf) +
+              (0.1 × found_by_both_bonus)
+# 0ms vs 26s CrossEncoder on Railway CPU
+```
 
-**Production Engineering**
-- Centralized configuration with `@dataclass` — no magic numbers scattered in code
-- Custom exceptions for clean module boundaries and decoupling
-- Logging over `print()` — timestamps, severity levels, file output
-- Unit testing in isolation — testing one thing without touching other modules
-- Type hints as documentation and IDE tooling
-
-**LLM Engineering**
-- Prompt structure: system rules → context → question (order matters)
-- Temperature selection: 0.7 for variety (query generation), 0.3 for precision (answers)
-- Hallucination prevention through explicit system instructions
-- Token budget awareness — prompts + context + answer must all fit
+### Hallucination Guard
+```
+System prompt rule: if not in context, say so explicitly.
+Pipeline detects guard phrases → sets answer_grounded=False.
+UI shows "No relevant sections" instead of misleading source buttons.
+```
 
 ---
 
-## 📄 API Reference
+## 🐛 Real Problems Solved In Production
 
-### `rag_pipeline()`
+| Error | Root Cause | Fix |
+|---|---|---|
+| `"YouTube is blocking requests"` | Railway datacenter IP blocked | Supadata API primary source |
+| `"Read timed out after 60s"` | Sequential embedding + CrossEncoder | Batch embed + score fusion |
+| `"not all arguments converted"` | Wrong Python logger syntax | f-string format |
+| Health check timeout → restart loop | Warmup blocking server start | Background thread warmup |
+| OOM on Railway | all-mpnet-base-v2 (768-dim) too large | all-MiniLM-L6-v2 (384-dim) |
+| 4-minute cold starts | Models downloading at runtime | Dockerfile pre-bake |
 
-```python
-from src.pipeline import rag_pipeline
+---
 
-result = rag_pipeline(
-    youtube_url          = "https://youtube.com/watch?v=...",  
-    user_question        = "Your question here",               
-    conversation_history = [                                   
-        {"question": "previous q", "answer": "previous a"}
-    ],
-    window_sec           = 60,    
-    overlap_sec          = 15,    
-    retrieve_top_k       = 5,     
-    rerank_top_k         = 3,     
-)
-```
+## 📄 Environment Variables
 
-**Returns:**
-
-```python
-{
-    "answer"      : "As explained at [5:15], ...",
-    "sources"     : [
-        {"timestamp": "5:15", "end_time": "6:17", "start_sec": 315.0},
-        {"timestamp": "8:42", "end_time": "9:30", "start_sec": 522.0},
-    ],
-    "queries_used": [
-        "gradient descent optimization neural networks",
-        "how model weights update during training",
-        "loss function minimization backpropagation"
-    ]
-}
-```
+| Variable | Where | Description |
+|---|---|---|
+| `GROQ_API_KEY` | Railway + local | From [console.groq.com](https://console.groq.com) |
+| `SUPADATA_API_KEY` | Railway | From [supadata.ai](https://supadata.ai) |
+| `CLOUD_MODE` | Railway | `true` — enables batch embed + score fusion |
+| `CHROMA_DIR` | Railway | Path to persistent volume mount |
+| `FASTAPI_URL` | HuggingFace | Railway backend URL for Streamlit |
 
 ---
 
 ## 🤝 Contributing
 
-This is a learning project built in public. Feedback, suggestions, and PRs are welcome.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit changes (`git commit -m "feat: add your feature"`)
-4. Push to branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+```bash
+git checkout -b feature/your-feature
+# make changes
+pytest tests/ -v --tb=short -m "not integration"
+git commit -m "feat: your feature"
+git push origin feature/your-feature
+# open pull request
+```
 
 ---
 
 ## 👨‍💻 Author
 
-**Gaurang Sane**  
-Final Year CS (Data Science) Student — University of Mumbai  
-AI Developer Intern @ Enjay IT Solutions
+<div align="center">
 
-[![GitHub](https://img.shields.io/badge/GitHub-GaurangSane-181717?style=flat&logo=github)](https://github.com/GaurangSane)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat&logo=linkedin)]([https://linkedin.com/in/your-profile](https://www.linkedin.com/in/gaurang-sane-84b5b1254/))
+**Gaurang Sane**
+B.E. Computer Science (Data Science) · CGPA 8.43
+University of Mumbai · AI Developer Intern @ Enjay IT Solutions
 
----
+*Actively seeking AI Engineer / GenAI Engineer roles · Mumbai · Open to Remote*
+
+[![GitHub](https://img.shields.io/badge/GitHub-GaurangSane-181717?style=flat-square&logo=github)](https://github.com/GaurangSane)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Gaurang_Sane-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/gaurang-sane-84b5b1254/)
+
+</div>
 
 ---
 
 <div align="center">
 
-**Built from scratch, step by step, understanding every component.**  
-*Not a tutorial copy. Every design decision documented.*
+**Built from scratch. Every component understood before it was written.**
+*206 tests · 3 live deployments · 0 tutorial copies*
 
-⭐ Star this repo if it helped you understand RAG systems
+⭐ **Star this repo** if it helped you understand production RAG systems
 
 </div>
