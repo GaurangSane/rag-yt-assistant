@@ -269,19 +269,50 @@ async function getCurrentVideoUrl() {
 // API CALLS
 // ════════════════════════════════════════════════════════════════════
 
+
+
 async function checkServerHealth() {
-  try {
-    const resp = await fetch(`${API_BASE}/health`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!resp.ok) return false;
-    const data = await resp.json();
-    console.log("[popup] Health check:", data);
-    return data.pipeline_loaded === true;
-  } catch (e) {
-    console.error("[popup] Health check failed:", e.message);
+    const MAX_RETRIES  = 3;
+    const RETRY_DELAY  = 5000;  // 5 seconds between retries
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const resp = await fetch(`${API_BASE}/health`, {
+                signal: AbortSignal.timeout(10000),  // 10s per attempt
+            });
+
+            if (!resp.ok) {
+                throw new Error(`Status ${resp.status}`);
+            }
+
+            const data = await resp.json();
+
+            if (data.pipeline_loaded) {
+                return true;
+            }
+
+            // Pipeline still loading (rare — happens right after deploy)
+            logger.info(
+                `[popup] Server starting up | attempt=${attempt}`
+            );
+
+        } catch (e) {
+            console.log(
+                `[popup] Health check attempt ${attempt} failed: ${e.message}`
+            );
+
+            if (attempt < MAX_RETRIES) {
+                // Show user what's happening
+                setStatus(
+                    `Waking up server... (${attempt}/${MAX_RETRIES})`,
+                    "yellow"
+                );
+                await new Promise(r => setTimeout(r, RETRY_DELAY));
+            }
+        }
+    }
+
     return false;
-  }
 }
 
 async function isVideoIndexed(videoId) {
