@@ -18,7 +18,7 @@
 
 <br/>
 
-### 🌐 [Live Web App](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) &nbsp;·&nbsp; 📚 [API Docs](https://your-app.railway.app/docs) &nbsp;·&nbsp; 🔌 [Chrome Extension](https://github.com/GaurangSane/yt-rag-assistant/releases/latest)
+### 🌐 [Live Web App](https://huggingface.co/spaces/Gaurang19/yt-rag-assistant) &nbsp;·&nbsp; 📚 [API Docs](https://your-app.railway.app/docs) &nbsp;·&nbsp; 🔌 [Chrome Extension](https://github.com/GaurangSane/rag-yt-assistant/releases/tag/v1.0.0)
 
 </div>
 
