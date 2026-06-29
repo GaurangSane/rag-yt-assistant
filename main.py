@@ -304,7 +304,6 @@ async def storage_status():
                 "error"   : str(e),
             })
 
-    # Estimate storage: ~384 floats × 4 bytes × chunks + metadata
     estimated_mb = (total_chunks * 384 * 4) / (1024 * 1024)
 
     return {
